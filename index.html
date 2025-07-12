@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyleaMUN Kudos Board</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Parchment texture for the overall body */
+            background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            background-color: #f7e7c9; /* A light, warm parchment color as a fallback */
+            background-repeat: repeat;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            height: 100vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column; /* Changed to column for header and content flow */
+            align-items: center; /* Center horizontally */
+            justify-content: flex-start; /* Align to top */
+            min-height: 100vh; /* Ensure body takes full height for content */
+        }
+        /* Custom scrollbar for better aesthetics - adjusted colors for parchment feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e0d0b9; /* Lighter parchment tone */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a08060; /* Darker, more muted parchment tone */
+            border-radius: 10px;
+            cursor: grab;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #856a4e; /* Even darker on hover */
+        }
+
+        /* Styles for the loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            font-size: 1.5rem;
+            color: #6d28d9; /* Purple-700 */
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #a78bfa; /* Purple-400 */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Styles for custom message box (instead of alert) */
+        .custom-alert-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .custom-alert-box {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 90%;
+            min-width: 280px;
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-alert-box h3 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #6d28d9; /* Purple-700 */
+            margin-bottom: 1rem;
+        }
+        .custom-alert-box p {
+            font-size: 1rem;
+            color: #4b5563; /* Gray-700 */
+            margin-bottom: 1.5rem;
+        }
+        .custom-alert-box button {
+            background-color: #a78bfa; /* Purple-400 */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        .custom-alert-box button:hover {
+            background-color: #8b5cf6; /* Purple-500 */
+        }
+
+        /* Password Prompt Modal */
+        .password-prompt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+        .password-prompt-box {
+            background-color: #fcfcf0; /* Light creamy background */
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 350px;
+            min-width: 280px;
+            font-family: 'Inter', sans-serif;
+            border: 1px solid #d4c2a7;
+        }
+        .password-prompt-box h3 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #5a2d0b; /* Brown */
+            margin-bottom: 1rem;
+        }
+        .password-prompt-box input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d4c2a7;
+            background-color: white;
+            color: #5a2d0b;
+        }
+        .password-prompt-box button {
+            background-color: #a08060; /* Darker parchment/gold */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+            margin: 0 0.5rem;
+        }
+        .password-prompt-box button:hover {
+            background-color: #856a4e;
+        }
+        .password-prompt-box .cancel-button {
+            background-color: #d4c2a7; /* Muted parchment */
+            color: #5a2d0b;
+        }
+        .password-prompt-box .cancel-button:hover {
+            background-color: #c0b099;
+        }
+
+
+        /* Header styling - Consistent with other pages */
+        .header-container {
+            background-color: #ffeebc; /* Peach-lemon background for header */
+            border-bottom: 1px solid #d4c2a7;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header-container h1 {
+            color: #5a2d0b; /* Brown for title */
+            font-size: 2.5rem; /* text-4xl */
+            font-weight: 800; /* font-extrabold */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            margin-bottom: 0.5rem;
+        }
+        .header-container p {
+            color: #6e5e4d; /* Muted brown-grey for description */
+            font-size: 1rem;
+        }
+
+        /* Kudos Board container */
+        .kudos-board-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Responsive grid for cards */
+            gap: 1.5rem; /* Space between cards */
+            max-width: 1200px; /* Max width for the grid */
+            padding: 1rem;
+            width: 100%;
+            margin: 0 auto 20px auto; /* Center grid and add bottom margin */
+        }
+
+        /* Individual Kudos Card styling */
+        .kudos-card {
+            background-color: #fcfcf0; /* Lighter creamy background for cards */
+            border: 1px solid #d4c2a7;
+            border-radius: 1rem; /* rounded-xl */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Pushes like button to bottom */
+            transition: transform 0.2s ease-in-out;
+        }
+        .kudos-card:hover {
+            transform: translateY(-5px); /* Subtle lift on hover */
+        }
+        .kudos-card-content {
+            padding: 1rem;
+            flex-grow: 1; /* Allows content to expand */
+            display: flex;
+            flex-direction: column;
+        }
+        .kudos-card-content p {
+            font-size: 1rem; /* Base font size for message */
+            color: #5a2d0b; /* Brown for message text */
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+        .kudos-card-meta {
+            font-size: 0.875rem; /* text-sm */
+            color: #6e5e4d; /* Muted brown-grey for meta info */
+            margin-top: 0.5rem;
+        }
+        .kudos-card-meta strong {
+            color: #b8860b; /* Gold for names */
+        }
+
+        .like-section {
+            padding: 0 1rem 1rem 1rem; /* Add padding for the like section */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem; /* Space between content and like section */
+        }
+        .like-button {
+            background-color: #a08060; /* Darker parchment/gold color for button */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .like-button:hover {
+            background-color: #856a4e;
+        }
+        .like-button.liked {
+            background-color: #4CAF50; /* Green when liked */
+            cursor: not-allowed;
+        }
+        .like-count {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: bold;
+            color: #ffd700; /* Bright gold for like count */
+        }
+
+        /* Delete Button styling */
+        .delete-button {
+            background-color: #dc2626; /* Red-600 */
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.3rem;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+            cursor: pointer;
+            margin-left: auto; /* Push to the right */
+            display: flex; /* For icon alignment */
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .delete-button:hover {
+            background-color: #b91c1c; /* Red-700 */
+        }
+        .delete-button svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        /* Filter/Sort Section */
+        .filter-sort-container {
+            background-color: #ffeebc; /* Peach-lemon background */
+            border: 1px solid #d4c2a7;
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 1rem;
+            margin: 0 auto 20px auto;
+            max-width: 800px;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+        }
+        .filter-sort-container label {
+            color: #6e5e4d; /* Muted brown-grey */
+            font-weight: 600;
+        }
+        .filter-sort-container select, .filter-sort-container input[type="text"] {
+            background-color: #fcfcf0;
+            border: 1px solid #d4c2a7;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            color: #5a2d0b;
+        }
+        .filter-sort-container select:focus, .filter-sort-container input[type="text"]:focus {
+            outline: none;
+            border-color: #b8860b;
+            box-shadow: 0 0 0 2px rgba(184, 134, 11, 0.2);
+        }
+
+        /* No kudos message */
+        #no-kudos-message {
+            text-align: center;
+            color: #6e5e4d;
+            margin-top: 50px;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body class="selection:bg-purple-200 selection:text-purple-800">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <p>Loading Kudos Board...</p>
+    </div>
+
+    <!-- Custom Alert/Message Box HTML -->
+    <div id="custom-alert-overlay" class="custom-alert-overlay hidden">
+        <div class="custom-alert-box">
+            <h3 id="custom-alert-title"></h3>
+            <p id="custom-alert-message"></p>
+            <button id="custom-alert-ok-button">OK</button>
+        </div>
+    </div>
+
+    <!-- Password Prompt Modal -->
+    <div id="password-prompt-overlay" class="password-prompt-overlay hidden">
+        <div class="password-prompt-box">
+            <h3>Enter Admin Password</h3>
+            <input type="password" id="admin-password-input" placeholder="Password">
+            <div class="flex justify-center">
+                <button id="password-confirm-button">Confirm</button>
+                <button id="password-cancel-button" class="cancel-button">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="header-container">
+        <h1>PyleaMUN Kudos Board</h1>
+        <p>See what delegates are saying and give some kudos!</p>
+        <a href="kudos-shoutout.html" class="kudos-board-link mt-4">
+            &larr; Give a Shout-Out!
+        </a>
+    </div>
+
+    <!-- Filter and Sort Section -->
+    <div class="filter-sort-container">
+        <div class="flex items-center gap-2">
+            <label for="sort-by">Sort By:</label>
+            <select id="sort-by" class="p-2 rounded-md">
+                <option value="likes">Most Liked</option>
+                <option value="timestamp">Newest</option>
+            </select>
+        </div>
+        <div class="flex items-center gap-2">
+            <label for="search-kudos">Search:</label>
+            <input type="text" id="search-kudos" placeholder="Country, delegate, keyword..." class="p-2 rounded-md">
+        </div>
+    </div>
+
+    <!-- Kudos Board Grid -->
+    <div id="kudos-board-grid" class="kudos-board-grid">
+        <!-- Kudos cards will be dynamically loaded here by JavaScript -->
+        <p id="no-kudos-message" class="hidden col-span-full">No shout-outs posted yet. Be the first to spread some kindness!</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Import 'increment' for atomic numerical updates
+        import { getFirestore, collection, query, orderBy, onSnapshot, updateDoc, doc, arrayUnion, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Your web app's Firebase configuration (from your working project)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDc7w_a0mmNKvpN5nXl0YGzNXlJhbu3T6Y",
+            authDomain: "pyleamun-kudos-app.firebaseapp.com",
+            projectId: "pyleamun-kudos-app",
+            storageBucket: "pyleamun-kudos-app.firebasestorage.app",
+            messagingSenderId: "99814376145",
+            appId: "1:99814376145:web:9d2c25156d0d8ffce57bf0"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserId = null; // Stores the anonymous user's UID
+        let currentSortBy = 'likes'; // Default sort order
+        let currentSearchTerm = ''; // Default search term
+
+        // --- ADMIN CONFIGURATION ---
+        // IMPORTANT: Replace with your actual Admin User ID and a secret password.
+        // Get your Admin User ID by opening the console on your admin browser and copying the "User signed in:" UID.
+        const ADMIN_UID = "PtVZq56rN4Yz7NZKOoPfJD6l6a63"; // <--- REPLACE THIS with the UID you copied from your console
+        const ADMIN_PASSWORD = "@@Pylea@@26"; // <--- REPLACE THIS with your desired admin password
+
+        // --- UI Utility Functions ---
+        function showLoading(message = "Processing...") {
+            document.getElementById('loading-overlay').querySelector('p').textContent = message;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        function showAlert(title, message) {
+            document.getElementById('custom-alert-title').textContent = title;
+            document.getElementById('custom-alert-message').textContent = message;
+            document.getElementById('custom-alert-overlay').classList.remove('hidden');
+        }
+
+        document.getElementById('custom-alert-ok-button').addEventListener('click', () => {
+            document.getElementById('custom-alert-overlay').classList.add('hidden');
+        });
+
+        // Password Prompt Modal Functions
+        const passwordPromptOverlay = document.getElementById('password-prompt-overlay');
+        const adminPasswordInput = document.getElementById('admin-password-input');
+        const passwordConfirmButton = document.getElementById('password-confirm-button');
+        const passwordCancelButton = document.getElementById('password-cancel-button');
+
+        function showPasswordPrompt(callback) {
+            adminPasswordInput.value = ''; // Clear previous input
+            passwordPromptOverlay.classList.remove('hidden');
+            adminPasswordInput.focus(); // Focus on the input
+
+            const confirmHandler = () => {
+                const enteredPassword = adminPasswordInput.value;
+                passwordPromptOverlay.classList.add('hidden');
+                passwordConfirmButton.removeEventListener('click', confirmHandler);
+                passwordCancelButton.removeEventListener('click', cancelHandler);
+                // Remove the one-time keypress listener if it was added
+                adminPasswordInput.removeEventListener('keypress', keypressHandler);
+                callback(enteredPassword);
+            };
+
+            const cancelHandler = () => {
+                passwordPromptOverlay.classList.add('hidden');
+                passwordConfirmButton.removeEventListener('click', confirmHandler);
+                passwordCancelButton.removeEventListener('click', cancelHandler);
+                // Remove the one-time keypress listener if it was added
+                adminPasswordInput.removeEventListener('keypress', keypressHandler);
+                callback(null); // Indicate cancellation
+            };
+
+            // Define keypress handler separately to remove it
+            const keypressHandler = (e) => {
+                if (e.key === 'Enter') {
+                    confirmHandler();
+                }
+            };
+
+            passwordConfirmButton.addEventListener('click', confirmHandler);
+            passwordCancelButton.addEventListener('click', cancelHandler);
+            adminPasswordInput.addEventListener('keypress', keypressHandler); // Add keypress listener
+        }
+
+        // --- Firebase Authentication ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                console.log("User signed in:", currentUserId);
+                // Once authenticated, start listening for kudos posts
+                listenForKudosPosts(); // This will now correctly show/hide the delete button
+            } else {
+                console.log("No user signed in. Signing in anonymously...");
+                signInAnonymously(auth)
+                    .then(() => {
+                        console.log("Anonymous sign-in successful.");
+                    })
+                    .catch((error) => {
+                        console.error("Anonymous sign-in failed:", error);
+                        showAlert("Authentication Error", "Could not sign you in. Please ensure Anonymous Authentication is enabled in your Firebase project settings (Authentication -> Sign-in method) for project: pyleamun-kudos-app.");
+                    });
+            }
+        });
+
+        // --- Kudos Board Elements and Logic ---
+        const kudosBoardGrid = document.getElementById('kudos-board-grid');
+        const noKudosMessage = document.getElementById('no-kudos-message');
+        const sortBySelect = document.getElementById('sort-by');
+        const searchKudosInput = document.getElementById('search-kudos');
+
+        // Project ID for Firestore collection path
+        const appId = "pyleamun-kudos-app"; 
+        const kudosCollectionRef = collection(db, `artifacts/${appId}/public/data/kudos`);
+
+        /**
+         * Renders a single kudos card.
+         * @param {object} kudosDoc - The Firestore document snapshot for a kudos post.
+         * @param {string} currentUserId - The UID of the current authenticated user.
+         */
+        function renderKudosCard(kudosDoc, currentUserId) {
+            const kudosData = kudosDoc.data();
+            const kudosId = kudosDoc.id;
+            const hasLiked = kudosData.likers && kudosData.likers.includes(currentUserId);
+
+            const card = document.createElement('div');
+            card.className = 'kudos-card';
+            card.dataset.kudosId = kudosId; // Store kudos ID on the card
+
+            // Format timestamp if available
+            const date = kudosData.timestamp ? kudosData.timestamp.toDate() : new Date();
+            const formattedDate = date.toLocaleDateString('en-US', {
+                year: 'numeric', month: 'short', day: 'numeric'
+            });
+            const formattedTime = date.toLocaleTimeString('en-US', {
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            card.innerHTML = `
+                <div class="kudos-card-content">
+                    <p class="text-lg font-medium mb-2">${kudosData.message}</p>
+                    <p class="kudos-card-meta">
+                        ${kudosData.to ? `To: <strong>${kudosData.to}</strong>` : ''}
+                        ${kudosData.from ? `From: <strong>${kudosData.from}</strong>` : ''}
+                    </p>
+                    <p class="kudos-card-meta text-xs">Posted: ${formattedDate} at ${formattedTime}</p>
+                </div>
+                <div class="like-section">
+                    <button class="like-button ${hasLiked ? 'liked' : ''}" ${hasLiked ? 'disabled' : ''}>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                        </svg>
+                        ${hasLiked ? 'Liked' : 'Like'}
+                    </button>
+                    <span class="like-count">${kudosData.likes || 0} Likes</span>
+                    ${currentUserId === ADMIN_UID ? `
+                        <button class="delete-button" data-kudos-id="${kudosId}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.594 19h4.812a2.75 2.75 0 002.742-2.53l.841-10.518.148.022a.75.75 0 10.23-1.482 41.03 41.03 0 00-2.365-.298V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.35 7.11a.75.75 0 001.5.06l-.35-7.11zm3.42 0a.75.75 0 00-1.5.06l.35 7.11a.75.75 0 001.5.06l-.35-7.11z" clip-rule="evenodd" />
+                            </svg>
+                            Delete
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+
+            const likeButton = card.querySelector('.like-button');
+            if (!hasLiked) { // Only add event listener if not already liked
+                likeButton.addEventListener('click', () => handleLike(kudosId, card));
+            }
+
+            // Add event listener for delete button if it exists
+            const deleteButton = card.querySelector('.delete-button');
+            if (deleteButton) {
+                deleteButton.addEventListener('click', () => handleDeleteKudos(kudosId));
+            }
+            return card;
+        }
+
+        /**
+         * Handles liking a kudos post.
+         * @param {string} kudosId - The ID of the kudos document to like.
+         * @param {HTMLElement} cardElement - The HTML element of the kudos card.
+         */
+        async function handleLike(kudosId, cardElement) {
+            if (!currentUserId) {
+                showAlert("Authentication Required", "Please wait, signing you in to like posts.");
+                return;
+            }
+
+            showLoading("Recording your like...");
+            const kudosDocRef = doc(db, `artifacts/${appId}/public/data/kudos`, kudosId);
+
+            try {
+                // Optimistically update UI before Firebase confirms (real-time listener will correct if needed)
+                const likeButton = cardElement.querySelector('.like-button');
+                const likeCountSpan = cardElement.querySelector('.like-count');
+                
+                likeButton.classList.add('liked');
+                likeButton.disabled = true;
+                likeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                                        </svg>Liked`;
+                likeCountSpan.textContent = `${(parseInt(likeCountSpan.textContent) || 0) + 1} Likes`;
+
+                // CORRECTED: Use increment(1) for atomic increment
+                await updateDoc(kudosDocRef, {
+                    likes: increment(1), // Use Firebase's increment function
+                    likers: arrayUnion(currentUserId) // Add current user's ID to the likers array
+                });
+
+                console.log("Kudos liked successfully!");
+
+            } catch (error) {
+                console.error("Error liking kudos:", error);
+                if (error.code === 'permission-denied') {
+                    showAlert("Already Liked", "You have already liked this shout-out!");
+                } else {
+                    showAlert("Like Failed", "There was an error recording your like. Please try again.");
+                    // Revert optimistic UI if Firebase update failed
+                    const likeButton = cardElement.querySelector('.like-button');
+                    const likeCountSpan = cardElement.querySelector('.like-count');
+                    likeButton.classList.remove('liked');
+                    likeButton.disabled = false;
+                    likeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                                                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                                            </svg>Like`;
+                    // Only decrement if the optimistic update had actually happened
+                    if (parseInt(likeCountSpan.textContent) > 0) {
+                        likeCountSpan.textContent = `${(parseInt(likeCountSpan.textContent) || 0) - 1} Likes`;
+                    }
+                }
+            } finally {
+                hideLoading();
+            }
+        }
+
+        /**
+         * Handles deletion of a kudos post after password verification.
+         * @param {string} kudosId - The ID of the kudos document to delete.
+         */
+        async function handleDeleteKudos(kudosId) {
+            if (!currentUserId || currentUserId !== ADMIN_UID) {
+                showAlert("Access Denied", "You do not have permission to delete posts.");
+                return;
+            }
+
+            showPasswordPrompt(async (enteredPassword) => {
+                if (enteredPassword === null) { // User cancelled
+                    return;
+                }
+
+                if (enteredPassword !== ADMIN_PASSWORD) {
+                    showAlert("Incorrect Password", "The password entered is incorrect. Please try again.");
+                    return;
+                }
+
+                // Password is correct, proceed with deletion
+                showLoading("Deleting post...");
+                const kudosDocRef = doc(db, `artifacts/${appId}/public/data/kudos`, kudosId);
+
+                try {
+                    await deleteDoc(kudosDocRef);
+                    hideLoading();
+                    showAlert("Success", "Kudos post deleted successfully!");
+                } catch (error) {
+                    console.error("Error deleting kudos:", error);
+                    showAlert("Deletion Failed", "Could not delete the post. Please check permissions or try again.");
+                    hideLoading();
+                }
+            });
+        }
+
+        /**
+         * Listens for real-time updates on kudos posts from Firestore.
+         */
+        function listenForKudosPosts() {
+            showLoading("Loading Kudos Board...");
+            let q = query(kudosCollectionRef, orderBy(currentSortBy, "desc")); // Apply sorting
+
+            onSnapshot(q, (snapshot) => {
+                let allKudos = [];
+                snapshot.forEach((doc) => {
+                    allKudos.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Apply client-side search filtering if a term exists
+                let displayedKudos = allKudos;
+                if (currentSearchTerm) {
+                    const searchTermLower = currentSearchTerm.toLowerCase();
+                    displayedKudos = allKudos.filter(kudos =>
+                        (kudos.message && kudos.message.toLowerCase().includes(searchTermLower)) ||
+                        (kudos.to && kudos.to.toLowerCase().includes(searchTermLower)) ||
+                        (kudos.from && kudos.from.toLowerCase().includes(searchTermLower))
+                    );
+                }
+
+                kudosBoardGrid.innerHTML = ''; // Clear existing kudos
+                if (displayedKudos.length === 0) {
+                    noKudosMessage.classList.remove('hidden');
+                } else {
+                    noKudosMessage.classList.add('hidden');
+                    displayedKudos.forEach((kudos) => {
+                        kudosBoardGrid.appendChild(renderKudosCard({ id: kudos.id, data: () => kudos }, currentUserId));
+                    });
+                }
+                hideLoading();
+            }, (error) => {
+                console.error("Error fetching kudos posts:", error);
+                showAlert("Error", "Could not load kudos board. Please try refreshing the page.");
+                hideLoading();
+            });
+        }
+
+        // --- Event Listeners for Filter/Sort ---
+        sortBySelect.addEventListener('change', (event) => {
+            currentSortBy = event.target.value;
+            listenForKudosPosts(); // Re-fetch and re-render with new sort order
+        });
+
+        searchKudosInput.addEventListener('input', (event) => {
+            currentSearchTerm = event.target.value.trim();
+            // Debounce search input to avoid too many re-renders/queries
+            clearTimeout(searchKudosInput.debounceTimeout);
+            searchKudosInput.debounceTimeout = setTimeout(() => {
+                listenForKudosPosts(); // Re-render with new search filter
+            }, 300); // Wait 300ms after last input
+        });
+
+        // Initial load (will be triggered by onAuthStateChanged)
+        // This ensures currentUserId is set before listenForKudosPosts is called
+        // and allows the delete button to render correctly based on ADMIN_UID.
+        if (auth.currentUser) {
+            currentUserId = auth.currentUser.uid;
+            listenForKudosPosts();
+        }
+    </script>
+</body>
+</html>
