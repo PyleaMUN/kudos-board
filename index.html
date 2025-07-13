@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PyleaMUN Kudos Board</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -351,13 +350,11 @@
     </style>
 </head>
 <body class="selection:bg-purple-200 selection:text-purple-800">
-    <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay hidden">
         <div class="loading-spinner"></div>
         <p>Loading Kudos Board...</p>
     </div>
 
-    <!-- Custom Alert/Message Box HTML -->
     <div id="custom-alert-overlay" class="custom-alert-overlay hidden">
         <div class="custom-alert-box">
             <h3 id="custom-alert-title"></h3>
@@ -366,7 +363,6 @@
         </div>
     </div>
 
-    <!-- Password Prompt Modal -->
     <div id="password-prompt-overlay" class="password-prompt-overlay hidden">
         <div class="password-prompt-box">
             <h3>Enter Admin Password</h3>
@@ -378,7 +374,6 @@
         </div>
     </div>
 
-    <!-- Page Header -->
     <div class="header-container">
         <h1>PyleaMUN Kudos Board</h1>
         <p>See what delegates are saying and give some kudos!</p>
@@ -387,7 +382,6 @@
         </a>
     </div>
 
-    <!-- Filter and Sort Section -->
     <div class="filter-sort-container">
         <div class="flex items-center gap-2">
             <label for="sort-by">Sort By:</label>
@@ -402,9 +396,7 @@
         </div>
     </div>
 
-    <!-- Kudos Board Grid -->
     <div id="kudos-board-grid" class="kudos-board-grid">
-        <!-- Kudos cards will be dynamically loaded here by JavaScript -->
         <p id="no-kudos-message" class="hidden col-span-full">No shout-outs posted yet. Be the first to spread some kindness!</p>
     </div>
 
@@ -434,10 +426,10 @@
         let currentSearchTerm = ''; // Default search term
 
         // --- ADMIN CONFIGURATION ---
-        // IMPORTANT: Replace with your actual Admin User ID and a secret password.
-        // Get your Admin User ID by opening the console on your admin browser and copying the "User signed in:" UID.
-        const ADMIN_UID = "PtVZq56rN4Yz7NZKOoPfJD6l6a63"; // <--- THIS IS YOUR ADMIN UID
-        const ADMIN_PASSWORD = "adminpassword123"; // <--- REPLACE THIS with your desired admin password
+        // IMPORTANT: The ADMIN_UID below must match the UID in your Firebase Firestore Security Rules.
+        // The ADMIN_PASSWORD is used for the in-app password prompt.
+        const ADMIN_UID = "PtVZq56rN4Yz7NZKOoPfJD6l6a63"; // This is your Admin UID for showing the button
+        const ADMIN_PASSWORD = "@@Pylea@@26"; // Your specified admin password
 
         // --- UI Utility Functions ---
         function showLoading(message = "Processing...") {
@@ -470,12 +462,12 @@
             passwordPromptOverlay.classList.remove('hidden');
             adminPasswordInput.focus(); // Focus on the input
 
+            // Use a one-time listener pattern to avoid multiple executions
             const confirmHandler = () => {
                 const enteredPassword = adminPasswordInput.value;
                 passwordPromptOverlay.classList.add('hidden');
                 passwordConfirmButton.removeEventListener('click', confirmHandler);
                 passwordCancelButton.removeEventListener('click', cancelHandler);
-                // Remove the one-time keypress listener if it was added
                 adminPasswordInput.removeEventListener('keypress', keypressHandler);
                 callback(enteredPassword);
             };
@@ -484,17 +476,20 @@
                 passwordPromptOverlay.classList.add('hidden');
                 passwordConfirmButton.removeEventListener('click', confirmHandler);
                 passwordCancelButton.removeEventListener('click', cancelHandler);
-                // Remove the one-time keypress listener if it was added
                 adminPasswordInput.removeEventListener('keypress', keypressHandler);
                 callback(null); // Indicate cancellation
             };
 
-            // Define keypress handler separately to remove it
             const keypressHandler = (e) => {
                 if (e.key === 'Enter') {
                     confirmHandler();
                 }
             };
+
+            // Remove any existing listeners before adding new ones
+            passwordConfirmButton.removeEventListener('click', confirmHandler);
+            passwordCancelButton.removeEventListener('click', cancelHandler);
+            adminPasswordInput.removeEventListener('keypress', keypressHandler);
 
             passwordConfirmButton.addEventListener('click', confirmHandler);
             passwordCancelButton.addEventListener('click', cancelHandler);
@@ -528,7 +523,7 @@
         const searchKudosInput = document.getElementById('search-kudos');
 
         // Project ID for Firestore collection path
-        const appId = "pyleamun-kudos-app"; 
+        const appId = "pyleamun-kudos-app";
         const kudosCollectionRef = collection(db, `artifacts/${appId}/public/data/kudos`);
 
         /**
@@ -613,7 +608,7 @@
                 // Optimistically update UI before Firebase confirms (real-time listener will correct if needed)
                 const likeButton = cardElement.querySelector('.like-button');
                 const likeCountSpan = cardElement.querySelector('.like-count');
-                
+
                 likeButton.classList.add('liked');
                 likeButton.disabled = true;
                 likeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
